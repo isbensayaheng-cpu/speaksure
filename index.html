@@ -4,91 +4,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SpeakSure Mentor</title>
+    <title>SpeakSure AI Mentor</title>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f7ff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 400px; }
-        .scaffold-box { background: #e7f3ff; border-left: 4px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 1rem; }
-        #mic-btn { width: 90px; height: 90px; border-radius: 50%; border: none; background: #3498db; color: white; font-size: 40px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .scaffold { background: #eef6ff; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #3498db; }
+        #mic-btn { width: 100px; height: 100px; border-radius: 50%; border: none; background: #3498db; color: white; font-size: 40px; cursor: pointer; }
         #mic-btn.active { background: #ff4757; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        #status { margin-top: 15px; color: #7f8c8d; font-weight: bold; }
-        #response { margin-top: 20px; line-height: 1.5; color: #2c3e50; }
+        #status { margin-top: 15px; font-weight: bold; color: #34495e; }
+        #response { margin-top: 20px; color: #2c3e50; font-size: 1.1rem; }
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(52, 152, 219, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 100; cursor: pointer; }
     </style>
 </head>
 <body>
 
+<div id="start-overlay" onclick="initAudio()">
+    <h1>Welcome Mentor!</h1>
+    <p>Tap anywhere to unlock the Microphone</p>
+    <div style="font-size: 50px;">🔓</div>
+</div>
+
 <div class="container">
-    <div style="font-size: 0.8rem; color: #3498db; margin-bottom: 5px; font-weight: bold;">SCAFFOLDING STEP</div>
-    <div class="scaffold-box" id="hint">Try: "I am ready to learn English!"</div>
-    
+    <div class="scaffold">
+        <small style="color:#3498db; display:block;">SCAFFOLDING HINT:</small>
+        <strong>"Hello, help me practice English!"</strong>
+    </div>
     <button id="mic-btn">🎤</button>
-    <div id="status">Tap to speak</div>
-    <div id="response">Your Mentor is waiting...</div>
+    <div id="status">Ready to listen!</div>
+    <div id="response">Your AI Mentor is here...</div>
 </div>
 
 <script>
     const API_KEY = "AIzaSyCSRoHI160-pBaQrbMj1F096OWrZ7iExHg"; 
-    const btn = document.getElementById('mic-btn');
-    const status = document.getElementById('status');
+    const micBtn = document.getElementById('mic-btn');
+    const statusText = document.getElementById('status');
     const responseDiv = document.getElementById('response');
+    const overlay = document.getElementById('start-overlay');
 
-    // تفعيل الصوت للآيفون (iOS Fix)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        alert("Speech recognition is not supported on this browser. Please use Safari on iPhone or Chrome on PC.");
-    } else {
-        const recognition = new SpeechRecognition();
+    let recognition;
+
+    // وظيفة فك قفل الصوت (مهمة جداً للآيفون)
+    function initAudio() {
+        overlay.style.display = 'none';
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("This browser doesn't support Voice. Please use Safari on iPhone.");
+            return;
+        }
+
+        recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
-        recognition.interimResults = false;
         recognition.continuous = false;
 
-        btn.onclick = () => {
-            // طلب إذن الميكروفون برمجياً فور الضغط
+        // تهيئة الصوت بمجرد الضغط (Self-Efficacy)
+        const silence = new SpeechSynthesisUtterance("");
+        window.speechSynthesis.speak(silence);
+        
+        statusText.innerText = "Microphone Unlocked! Tap the icon.";
+    }
+
+    micBtn.onclick = () => {
+        if (!recognition) return;
+        try {
             recognition.start();
-        };
+        } catch(e) { console.log("Already active"); }
+    };
 
-        recognition.onstart = () => {
-            btn.classList.add('active');
-            status.innerText = "Listening... Speak now!";
-        };
+    recognition.onstart = () => {
+        micBtn.classList.add('active');
+        statusText.innerText = "Listening...";
+    };
 
-        recognition.onresult = async (event) => {
-            btn.classList.remove('active');
-            const transcript = event.results[0][0].transcript;
-            status.innerText = "Processing...";
+    recognition.onresult = async (event) => {
+        micBtn.classList.remove('active');
+        const text = event.results[0][0].transcript;
+        statusText.innerText = "Thinking...";
 
-            const prompt = Student said: "${transcript}". Encourage them (Self-efficacy), give one small tip, and a next sentence scaffold. Max 30 words.;
+        const prompt = Student said: "${text}". Build their self-efficacy, give a small tip, and a scaffold sentence. Max 30 words.;
 
-            try {
-                const res = await fetch(https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                const reply = data.candidates[0].content.parts[0].text;
-                
-                responseDiv.innerText = reply;
-                status.innerText = "Excellent!";
-                
-                const speech = new SpeechSynthesisUtterance(reply);
-                window.speechSynthesis.speak(speech);
-            } catch (e) {
-                status.innerText = "Error. Try again.";
-            }
-        };
+        try {
+            const res = await fetch(https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}, {
 
 > Israa:
-recognition.onerror = (event) => {
-            btn.classList.remove('active');
-            status.innerText = "Error: " + event.error;
-            if(event.error === 'not-allowed') {
-                alert("Please enable microphone access in Safari settings (AA icon).");
-            }
-        };
-    }
+method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await res.json();
+            const reply = data.candidates[0].content.parts[0].text;
+            
+            responseDiv.innerText = reply;
+            statusText.innerText = "Listen!";
+
+            const speech = new SpeechSynthesisUtterance(reply);
+            speech.lang = 'en-US';
+            window.speechSynthesis.speak(speech);
+        } catch (e) {
+            statusText.innerText = "Error, try again!";
+        }
+    };
+
+    recognition.onerror = (e) => {
+        micBtn.classList.remove('active');
+        statusText.innerText = "Microphone error: " + e.error;
+    };
 </script>
 </body>
 </html>
