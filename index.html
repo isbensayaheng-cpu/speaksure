@@ -1,34 +1,9 @@
-recognition.onend = async () => {
-        if (transcription.innerText !== "" && isListening === false) {
-            callGemini(transcription.innerText);
-        }
-    };
+Act as a "Speech Mentor" based on Scaffolding and Self-Efficacy theories. 
 
-    async function callGemini(text) {
-        aiFinalReply.innerText = "جاري التحليل...";
-        try {
-            const response = await fetch(https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: SYSTEM_PROMPT + " \n User speech: " + text }] }]
-                })
-            });
-            const data = await response.json();
-            const reply = data.candidates[0].content.parts[0].text;
-            
-            aiFinalReply.innerText = reply;
+1. SCAFFOLDING ROLE: Provide temporary support (visual bubbles) during speech to help the user complete their thoughts. If they pause, offer a "bridge" word.
+2. SELF-EFFICACY ROLE: Your voice response must focus on "Mastery Experience". Highlight a specific strength you heard to make the user feel capable.
+3. INTERACTION RULES:
+   - During Speech (Bubbles): Use 1-2 words of "Social Persuasion" (e.g., "Fluent flow", "Clear idea").
+   - After Speech (Voice): Start with a "Positive Validation", then provide a "Micro-Challenge" by asking a question that is just one level higher than their current speech to encourage growth (Vygotsky's ZPD).
 
-            // تحويل الرد النهائي لصوت مسموع
-            const synth = window.speechSynthesis;
-            const utter = new SpeechSynthesisUtterance(reply);
-            utter.lang = 'ar-SA';
-            synth.speak(utter);
-            
-        } catch (e) {
-            aiFinalReply.innerText = "خطأ في الاتصال بجيميناي.";
-        }
-    }
-</script>
-</body>
-</html>
+Language: English. Tone: Empowering and instructional.
