@@ -1,71 +1,94 @@
+> Israa:
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://*.canva.com https://*.canva.me;">
-    <title>SpeakSure - AI English Mentor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SpeakSure Mentor</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #333; }
-        .container { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px; }
-        
-        /* Scaffolding Section */
-        .scaffold-area { background: #e8f4fd; border-left: 5px solid #3498db; padding: 15px; margin-bottom: 30px; border-radius: 10px; font-size: 1.1rem; }
-        .label { font-size: 0.75rem; color: #3498db; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        
-        #mic-btn { width: 100px; height: 100px; border-radius: 50%; border: none; background: #3498db; color: white; font-size: 45px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3); }
-        #mic-btn.active { background: #e74c3c; transform: scale(1.1); animation: pulse 1.2s infinite; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
-        
-        #status { margin-top: 20px; font-weight: 500; color: #7f8c8d; height: 24px; }
-        #ai-response { margin-top: 25px; font-size: 1.1rem; line-height: 1.6; color: #2c3e50; min-height: 60px; }
-        
-        /* Self-efficacy Feedback */
-        #reward-badge { display: none; background: #2ecc71; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f7ff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 400px; }
+        .scaffold-box { background: #e7f3ff; border-left: 4px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 1rem; }
+        #mic-btn { width: 90px; height: 90px; border-radius: 50%; border: none; background: #3498db; color: white; font-size: 40px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        #mic-btn.active { background: #ff4757; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        #status { margin-top: 15px; color: #7f8c8d; font-weight: bold; }
+        #response { margin-top: 20px; line-height: 1.5; color: #2c3e50; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <span class="label">Step 1: Scaffolding</span>
-    <div class="scaffold-area" id="scaffold-hint">
-        Try saying: <strong>"I want to practice my English today."</strong>
-    </div>
-
-    <button id="mic-btn">🎤</button>
+    <div style="font-size: 0.8rem; color: #3498db; margin-bottom: 5px; font-weight: bold;">SCAFFOLDING STEP</div>
+    <div class="scaffold-box" id="hint">Try: "I am ready to learn English!"</div>
     
-    <div id="status">Tap the microphone to speak</div>
-    <div id="reward-badge">🌟 Great Progress! Keep it up!</div>
-    <div id="ai-response">Your AI Mentor is listening...</div>
+    <button id="mic-btn">🎤</button>
+    <div id="status">Tap to speak</div>
+    <div id="response">Your Mentor is waiting...</div>
 </div>
 
 <script>
     const API_KEY = "AIzaSyCSRoHI160-pBaQrbMj1F096OWrZ7iExHg"; 
-    const micBtn = document.getElementById('mic-btn');
-    const statusText = document.getElementById('status');
-    const aiResponse = document.getElementById('ai-response');
-    const scaffoldHint = document.getElementById('scaffold-hint');
-    const rewardBadge = document.getElementById('reward-badge');
+    const btn = document.getElementById('mic-btn');
+    const status = document.getElementById('status');
+    const responseDiv = document.getElementById('response');
 
+    // تفعيل الصوت للآيفون (iOS Fix)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
+    
     if (!SpeechRecognition) {
-        statusText.innerText = "Browser not supported. Use Chrome.";
+        alert("Speech recognition is not supported on this browser. Please use Safari on iPhone or Chrome on PC.");
     } else {
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.continuous = false;
 
-        micBtn.onclick = () => {
+        btn.onclick = () => {
+            // طلب إذن الميكروفون برمجياً فور الضغط
             recognition.start();
-            micBtn.classList.add('active');
-            statusText.innerText = "Listening...";
-            rewardBadge.style.display = "none";
+        };
+
+        recognition.onstart = () => {
+            btn.classList.add('active');
+            status.innerText = "Listening... Speak now!";
         };
 
         recognition.onresult = async (event) => {
+            btn.classList.remove('active');
             const transcript = event.results[0][0].transcript;
-            micBtn.classList.remove('active');
-            statusText.innerText = "Analyzing...";
+            status.innerText = "Processing...";
 
-            // Instructions focused on Scaffolding and Self-efficacy
+            const prompt = Student said: "${transcript}". Encourage them (Self-efficacy), give one small tip, and a next sentence scaffold. Max 30 words.;
+
+            try {
+                const res = await fetch(https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await res.json();
+                const reply = data.candidates[0].content.parts[0].text;
+                
+                responseDiv.innerText = reply;
+                status.innerText = "Excellent!";
+                
+                const speech = new SpeechSynthesisUtterance(reply);
+                window.speechSynthesis.speak(speech);
+            } catch (e) {
+                status.innerText = "Error. Try again.";
+            }
+        };
+
+> Israa:
+recognition.onerror = (event) => {
+            btn.classList.remove('active');
+            status.innerText = "Error: " + event.error;
+            if(event.error === 'not-allowed') {
+                alert("Please enable microphone access in Safari settings (AA icon).");
+            }
+        };
+    }
+</script>
+</body>
+</html>
